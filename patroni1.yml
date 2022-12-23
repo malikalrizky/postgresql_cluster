@@ -1,0 +1,42 @@
+scope: patroni1
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      parameters:
+        max_connections: 100
+        shared_buffers: 128MB
+        effective_cache_size: 512MB
+      restore_command: /usr/bin/pg_restore --exit-on-error --clean --no-acl --no-owner -d {dbname}
+      archive_command: /usr/bin/pg_archivecleanup '%p' %r
+  restore:
+    force: true
+  initdb:
+    encoding: UTF8
+    data_checksums:
+
+postgresql:
+  listen: 0.0.0.0:5000
+  connect_address: [dns]:5000
+  data_dir: /var/lib/postgresql/data
+  authentication:
+    superuser:
+      password: password
+      username: postgres
+  roles:
+    master:
+      - host: all
+        database: all
+        username: all
+
+etcd:
+  host: 127.0.0.1:2379
+  ttl: 30
+  watch_interval: 10
+  retry_timeout: 30
+  listen: 127.0.0.1:8008
+  initial_cluster: patroni1=http://127.0.0.1:8008
